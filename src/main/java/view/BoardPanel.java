@@ -6,6 +6,7 @@ package view;
 
 import controller.GameController;
 import model.Board;
+import model.ScoringType;
 import model.Stone;
 
 import javax.swing.*;
@@ -19,9 +20,9 @@ public class BoardPanel extends JPanel {
     private Board board;
     private GameController controller;
 
-    public BoardPanel(Board board, GameFrame gameFrame) {
+    public BoardPanel(Board board, GameFrame gameFrame, ScoringType scoringType) {
         this.board = board;
-        this.controller = new GameController(board, gameFrame);
+        this.controller = new GameController(board, gameFrame, scoringType);
 
         int size = board.getSize() * CELL_SIZE;
         setPreferredSize(new Dimension(size, size));

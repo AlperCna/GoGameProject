@@ -4,12 +4,14 @@
  */
 package view;
 
+import model.ScoringType;
+
 import javax.swing.*;
 import java.awt.*;
 
 public class EndScreen extends JPanel {
 
-    public EndScreen(JFrame frame, String winner) {
+    public EndScreen(JFrame frame, String winner, ScoringType scoringType) {
         setLayout(new BorderLayout());
 
         JLabel message = new JLabel("Kazanan: " + winner, SwingConstants.CENTER);
@@ -21,7 +23,7 @@ public class EndScreen extends JPanel {
         JButton exit = new JButton("Çıkış");
 
         restart.addActionListener(e -> {
-            frame.setContentPane(new GameFrame(frame).getMainPanel());
+            frame.setContentPane(new GameFrame(frame, scoringType).getMainPanel());
             frame.revalidate();
             frame.repaint();
         });

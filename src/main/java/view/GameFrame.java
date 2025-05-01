@@ -12,8 +12,9 @@ package view;
 
 
 import model.Board;
+import model.ScoringType;
 import model.Stone;
-
+import controller.GameController;
 import javax.swing.*;
 import java.awt.*;
 
@@ -23,13 +24,15 @@ public class GameFrame {
     private JLabel blackStats;
     private JLabel whiteStats;
     private BoardPanel boardPanel;
+    private GameController controller;
 
-    public GameFrame(JFrame parentFrame) {
+    public GameFrame(JFrame parentFrame, ScoringType scoringType) {
         Board board = new Board();
-        boardPanel = new BoardPanel(board, this);
+        boardPanel = new BoardPanel(board, this, scoringType);
+        controller = boardPanel.getController();
 
         JButton passButton = new JButton("✋ Pas Geç");
-        passButton.setFont(new Font("Arial", Font.BOLD, 14));
+        passButton.setFont(new Font("Arial", Font.PLAIN, 14));
         passButton.addActionListener(e -> boardPanel.passMove());
 
         JPanel buttonPanel = new JPanel();
@@ -41,17 +44,25 @@ public class GameFrame {
         styleLabel(whiteStats, Color.DARK_GRAY);
 
         JPanel scorePanel = new JPanel();
-        scorePanel.setLayout(new GridLayout(5, 1, 5, 5));
+        scorePanel.setLayout(new GridLayout(3, 1, 5, 5));
         scorePanel.setBorder(BorderFactory.createTitledBorder("🏁 Skorlar"));
         scorePanel.add(blackStats);
         scorePanel.add(whiteStats);
 
+        JPanel contentPanel = new JPanel(new BorderLayout());
+        contentPanel.add(boardPanel, BorderLayout.CENTER);
+        contentPanel.add(scorePanel, BorderLayout.EAST);
+        contentPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        JScrollPane scrollPane = new JScrollPane(contentPanel);
+        scrollPane.setBorder(null);
+
         mainPanel = new JPanel(new BorderLayout());
-        mainPanel.add(boardPanel, BorderLayout.CENTER);
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-        mainPanel.add(scorePanel, BorderLayout.EAST);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
 
         updateStats();
+        parentFrame.pack(); // pencere boyutunu içeriğe göre ayarla
+        parentFrame.setMinimumSize(new Dimension(700, 700)); // garanti genişlik
     }
 
     private void styleLabel(JLabel label, Color color) {
@@ -60,18 +71,13 @@ public class GameFrame {
     }
 
     public void updateStats() {
-        var controller = boardPanel.getController();
-        int blackCaptures = controller.getBlackCaptures();
-        int whiteCaptures = controller.getWhiteCaptures();
-        int blackTerritory = controller.calculateTerritory(Stone.BLACK);
-        int whiteTerritory = controller.calculateTerritory(Stone.WHITE);
         int blackTotal = controller.getTotalScore(Stone.BLACK);
         int whiteTotal = controller.getTotalScore(Stone.WHITE);
+        int blackEsir = controller.getBlackCaptures();
+        int whiteEsir = controller.getWhiteCaptures();
 
-        blackStats.setText("⚫ Siyah ➤ Esir: " + blackCaptures +
-                ", Alan: " + blackTerritory + ", Toplam: " + blackTotal);
-        whiteStats.setText("⚪ Beyaz ➤ Esir: " + whiteCaptures +
-                ", Alan: " + whiteTerritory + ", Toplam: " + whiteTotal);
+        blackStats.setText("⚫ Siyah ➤ Puan: " + blackTotal + " (Esir: " + blackEsir + ")");
+        whiteStats.setText("⚪ Beyaz ➤ Puan: " + whiteTotal + " (Esir: " + whiteEsir + ")");
     }
 
     public JPanel getMainPanel() {
@@ -80,8 +86,11 @@ public class GameFrame {
 
     public void showGameOverScreen(String winner) {
         JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(mainPanel);
-        topFrame.setContentPane(new EndScreen(topFrame, winner));
+        ScoringType type = boardPanel.getController().getScoringType();
+        topFrame.setContentPane(new EndScreen(topFrame, winner, type));
         topFrame.revalidate();
         topFrame.repaint();
     }
 }
+
+
