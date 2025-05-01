@@ -35,7 +35,7 @@ public class BoardPanel extends JPanel {
 
                 if (!controller.handleMove(x, y)) {
                     JOptionPane.showMessageDialog(null,
-                            "Geçersiz hamle!", "Uyarı", JOptionPane.WARNING_MESSAGE);
+                            "Ko kuralı ihlali veya geçersiz hamle!", "Uyarı", JOptionPane.WARNING_MESSAGE);
                 }
 
                 repaint();
@@ -84,4 +84,3 @@ public class BoardPanel extends JPanel {
         g.drawOval(xPixel, yPixel, 30, 30);
     }
 }
-
