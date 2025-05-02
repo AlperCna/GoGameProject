@@ -5,12 +5,16 @@
 package controller;
 
 import model.Board;
+import model.Move;
 import model.RulesChecker;
 import model.ScoringType;
 import model.Stone;
 import view.GameFrame;
 
 import java.util.*;
+import static model.ScoringType.CHINESE;
+import static model.ScoringType.JAPANESE;
+import static model.ScoringType.STONE;
 
 public class GameController {
 
@@ -24,14 +28,14 @@ public class GameController {
     private int blackCaptures = 0;
     private int whiteCaptures = 0;
 
-    private Stack<String> history;
+    private Stack<Move> moveHistory; // 🔄 Yeni: sıradan bağımsız hamle geçmişi
     private ScoringType scoringType;
 
     public GameController(Board board, GameFrame gameFrame, ScoringType scoringType) {
         this.board = board;
         this.rulesChecker = new RulesChecker(board);
         this.gameFrame = gameFrame;
-        this.history = new Stack<>();
+        this.moveHistory = new Stack<>();
         this.scoringType = scoringType;
     }
 
@@ -49,18 +53,17 @@ public class GameController {
 
     public boolean handleMove(int x, int y) {
         if (!board.isValidCoordinate(x, y) || !board.isCellEmpty(x, y)) return false;
-
-        String currentState = boardToString();
-        if (history.contains(currentState)) return false;
-
         if (rulesChecker.isSuicideMove(x, y, currentPlayer)) return false;
 
         board.placeStone(x, y, currentPlayer);
+
+        // 🔄 Hamle geçmişine ekle
+        moveHistory.push(new Move(x, y, currentPlayer));
+
         int removed = rulesChecker.captureStones(x, y, currentPlayer);
         if (currentPlayer == Stone.BLACK) blackCaptures += removed;
         else whiteCaptures += removed;
 
-        history.push(currentState);
         lastMoveWasPass = false;
         switchTurn();
         gameFrame.updateStats();
@@ -82,7 +85,24 @@ public class GameController {
         currentPlayer = (currentPlayer == Stone.BLACK) ? Stone.WHITE : Stone.BLACK;
     }
 
-    // ✅ DÜZELTİLMİŞ TERRITORY HESAPLAMA (Japon sistemine uygun)
+    public void undoLastMove() {
+        if (!moveHistory.isEmpty()) {
+            Move last = moveHistory.pop();
+            board.removeStone(last.x, last.y); // 🔄 Taşı geri al
+            gameFrame.updateStats();
+        }
+    }
+
+    public void resetGame() {
+        board.clearBoard();
+        currentPlayer = Stone.BLACK;
+        blackCaptures = 0;
+        whiteCaptures = 0;
+        lastMoveWasPass = false;
+        moveHistory.clear(); // 🔄 Geçmişi temizle
+        gameFrame.updateStats();
+    }
+
     public int calculateTerritory(Stone player) {
         boolean[][] visited = new boolean[board.getSize()][board.getSize()];
         int territory = 0;
@@ -98,13 +118,12 @@ public class GameController {
                         territory += area.size();
                     }
                 }
-            }   
+            }
         }
 
         return territory;
     }
 
-    // ✅ Boşluk grubu tarama ve çevresindeki taşları toplama
     private void dfsTerritoryCheck(int x, int y, boolean[][] visited, List<int[]> area, Set<Stone> borders) {
         if (!board.isValidCoordinate(x, y) || visited[x][y]) return;
         visited[x][y] = true;
@@ -141,17 +160,5 @@ public class GameController {
 
     public ScoringType getScoringType() {
         return scoringType;
-    }
-
-    private String boardToString() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < board.getSize(); i++) {
-            for (int j = 0; j < board.getSize(); j++) {
-                sb.append(board.getStone(i, j) == Stone.BLACK ? "B" :
-                          board.getStone(i, j) == Stone.WHITE ? "W" : ".");
-            }
-            sb.append("\n");
-        }
-        return sb.toString();
     }
 }

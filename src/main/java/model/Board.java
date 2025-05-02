@@ -49,4 +49,15 @@ public class Board {
     public boolean isValidCoordinate(int x, int y) {
         return x >= 0 && x < SIZE && y >= 0 && y < SIZE;
     }
+    
+
+public void clearBoard() {
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            grid[i][j] = Stone.EMPTY;
+        }
+    }
+}
+
+
 }

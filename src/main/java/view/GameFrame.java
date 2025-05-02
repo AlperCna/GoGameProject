@@ -34,10 +34,26 @@ public class GameFrame {
         JButton passButton = new JButton("✋ Pas Geç");
         passButton.setFont(new Font("Arial", Font.PLAIN, 14));
         passButton.addActionListener(e -> boardPanel.passMove());
+        
+        JButton undoButton = new JButton("↩️ Geri Al");
+undoButton.setFont(new Font("Arial", Font.PLAIN, 14));
+undoButton.addActionListener(e -> {
+    controller.undoLastMove();
+    boardPanel.repaint();
+});
+
+JButton resetButton = new JButton("🔄 Sıfırla");
+resetButton.setFont(new Font("Arial", Font.PLAIN, 14));
+resetButton.addActionListener(e -> {
+    controller.resetGame();
+    boardPanel.repaint();
+});
+        
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(passButton);
-
+        buttonPanel.add(undoButton);
+        buttonPanel.add(resetButton);
         blackStats = new JLabel();
         whiteStats = new JLabel();
         styleLabel(blackStats, Color.BLACK);
