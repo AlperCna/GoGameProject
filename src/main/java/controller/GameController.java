@@ -32,16 +32,18 @@ public class GameController {
     private Stack<Move> moveHistory;
     private ScoringType scoringType;
 
-    // 🆕 Hamle listesi
     private DefaultListModel<String> moveListModel = new DefaultListModel<>();
     private int moveCount = 0;
 
-    public GameController(Board board, GameFrame gameFrame, ScoringType scoringType) {
+    private double komi; // 🆕 Komi değeri
+
+    public GameController(Board board, GameFrame gameFrame, ScoringType scoringType, double komi) {
         this.board = board;
         this.rulesChecker = new RulesChecker(board);
         this.gameFrame = gameFrame;
         this.moveHistory = new Stack<>();
         this.scoringType = scoringType;
+        this.komi = komi;
     }
 
     public Stone getCurrentPlayer() {
@@ -63,7 +65,6 @@ public class GameController {
         board.placeStone(x, y, currentPlayer);
         moveHistory.push(new Move(x, y, currentPlayer));
 
-        // 🆕 Hamle açıklaması ekle
         moveCount++;
         String moveStr = moveCount + ". " + (currentPlayer == Stone.BLACK ? "⚫" : "⚪") + " (" + x + "," + y + ")";
         moveListModel.addElement(moveStr);
@@ -165,18 +166,20 @@ public class GameController {
     }
 
     public int getTotalScore(Stone player) {
-        return switch (scoringType) {
+        int base = switch (scoringType) {
             case JAPANESE -> calculateTerritory(player) + (player == Stone.BLACK ? blackCaptures : whiteCaptures);
             case CHINESE -> calculateTerritory(player) + countStones(player);
             case STONE -> countStones(player);
         };
+
+        if (player == Stone.WHITE) base += komi;
+        return (int) base;
     }
 
     public ScoringType getScoringType() {
         return scoringType;
     }
 
-    // 🆕 Listeyi GameFrame'e verebilmek için getter
     public DefaultListModel<String> getMoveListModel() {
         return moveListModel;
     }
@@ -184,4 +187,9 @@ public class GameController {
     public Board getBoard() {
         return board;
     }
+
+    public double getKomi() {
+        return komi;
+    }
 }
+

@@ -21,13 +21,31 @@ public class GameFrame {
     private JLabel whiteStats;
     private BoardPanel boardPanel;
     private GameController controller;
-    private JList<String> moveList; // 🆕 Hamle listesi alanı
+    private JList<String> moveList;
 
     public GameFrame(JFrame parentFrame, ScoringType scoringType, int boardSize) {
-        Board board = new Board(boardSize);
-        boardPanel = new BoardPanel(board, this, scoringType);
-        controller = boardPanel.getController();
+        // 🆕 Komi değeri kullanıcıdan alınır
+        String komiStr = JOptionPane.showInputDialog(
+            null,
+            "Beyaz oyuncu için komi (örn: 6.5):",
+            "Komi Belirle",
+            JOptionPane.QUESTION_MESSAGE
+        );
+        double komi = 6.5;
+        try {
+            if (komiStr != null && !komiStr.isBlank()) {
+                komi = Double.parseDouble(komiStr);
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "Geçersiz komi! Varsayılan 6.5 kullanılacak.");
+        }
 
+        // 🎮 Tahta oluşturuluyor
+        Board board = new Board(boardSize);
+        boardPanel = new BoardPanel(board, this, scoringType, komi); // ✅ KOMİ parametresi gönderiliyor
+        controller = boardPanel.getController(); // ✅ controller boardPanel içinde oluşturuluyor
+
+        // 🎮 Butonlar
         JButton passButton = new JButton("✋ Pas Geç");
         passButton.setFont(new Font("Arial", Font.PLAIN, 14));
         passButton.addActionListener(e -> boardPanel.passMove());
@@ -51,6 +69,7 @@ public class GameFrame {
         buttonPanel.add(undoButton);
         buttonPanel.add(resetButton);
 
+        // 🏁 Skor alanı
         blackStats = new JLabel();
         whiteStats = new JLabel();
         styleLabel(blackStats, Color.BLACK);
@@ -62,7 +81,7 @@ public class GameFrame {
         scorePanel.add(blackStats);
         scorePanel.add(whiteStats);
 
-        // 🆕 Hamle listesi paneli
+        // 📜 Hamle listesi
         moveList = new JList<>(controller.getMoveListModel());
         moveList.setFont(new Font("Monospaced", Font.PLAIN, 12));
         JScrollPane moveScroll = new JScrollPane(moveList);
@@ -75,7 +94,7 @@ public class GameFrame {
 
         JPanel contentPanel = new JPanel(new BorderLayout());
         contentPanel.add(boardPanel, BorderLayout.CENTER);
-        contentPanel.add(eastPanel, BorderLayout.EAST); // 🧠 Skor + Hamle listesi paneli
+        contentPanel.add(eastPanel, BorderLayout.EAST);
         contentPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         JScrollPane scrollPane = new JScrollPane(contentPanel);
@@ -87,7 +106,6 @@ public class GameFrame {
         updateStats();
         parentFrame.pack();
 
-        // 🧠 pencereyi tahta boyutuna göre büyüt
         int minSize = boardSize * 45;
         parentFrame.setMinimumSize(new Dimension(minSize + 250, minSize + 100));
     }
@@ -106,9 +124,10 @@ public class GameFrame {
         int whiteTotal = controller.getTotalScore(Stone.WHITE);
         int blackEsir = controller.getBlackCaptures();
         int whiteEsir = controller.getWhiteCaptures();
+        double komi = controller.getKomi();
 
         blackStats.setText("⚫ Siyah ➤ Puan: " + blackTotal + " (Esir: " + blackEsir + ")");
-        whiteStats.setText("⚪ Beyaz ➤ Puan: " + whiteTotal + " (Esir: " + whiteEsir + ")");
+        whiteStats.setText("⚪ Beyaz ➤ Puan: " + whiteTotal + " (Esir: " + whiteEsir + ") + Komi: " + komi);
     }
 
     public JPanel getMainPanel() {
