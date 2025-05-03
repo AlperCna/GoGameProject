@@ -13,12 +13,17 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 
 public class BoardPanel extends JPanel {
 
     private static final int CELL_SIZE = 40;
     private Board board;
     private GameController controller;
+
+    // 🆕 Mouse hover konumu
+    private int hoverX = -1;
+    private int hoverY = -1;
 
     public BoardPanel(Board board, GameFrame gameFrame, ScoringType scoringType) {
         this.board = board;
@@ -28,7 +33,25 @@ public class BoardPanel extends JPanel {
         setPreferredSize(new Dimension(size, size));
         setBackground(new Color(239, 201, 146));
 
+        // 🆕 Mouse hareketini takip et
+        addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                hoverX = e.getX() / CELL_SIZE;
+                hoverY = e.getY() / CELL_SIZE;
+                repaint();
+            }
+        });
+
+        // 🧠 Mouse çıkışı ve tıklaması
         addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseExited(MouseEvent e) {
+                hoverX = -1;
+                hoverY = -1;
+                repaint();
+            }
+
             @Override
             public void mouseClicked(MouseEvent e) {
                 int x = e.getX() / CELL_SIZE;
@@ -72,6 +95,26 @@ public class BoardPanel extends JPanel {
                     drawStone(g, x, y, stone);
                 }
             }
+        }
+
+        // 👻 Hover taş gösterimi
+        if (hoverX >= 0 && hoverY >= 0 &&
+                board.isValidCoordinate(hoverX, hoverY) &&
+                board.isCellEmpty(hoverX, hoverY)) {
+
+            Stone current = controller.getCurrentPlayer();
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f)); // %40 opak
+
+            int xPixel = hoverX * CELL_SIZE + CELL_SIZE / 2 - 15;
+            int yPixel = hoverY * CELL_SIZE + CELL_SIZE / 2 - 15;
+
+            g2.setColor(current == Stone.BLACK ? Color.BLACK : Color.WHITE);
+            g2.fillOval(xPixel, yPixel, 30, 30);
+            g2.setColor(Color.BLACK);
+            g2.drawOval(xPixel, yPixel, 30, 30);
+
+            g2.dispose();
         }
     }
 

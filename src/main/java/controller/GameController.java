@@ -11,6 +11,7 @@ import model.ScoringType;
 import model.Stone;
 import view.GameFrame;
 
+import javax.swing.*;
 import java.util.*;
 import static model.ScoringType.CHINESE;
 import static model.ScoringType.JAPANESE;
@@ -28,8 +29,12 @@ public class GameController {
     private int blackCaptures = 0;
     private int whiteCaptures = 0;
 
-    private Stack<Move> moveHistory; // 🔄 Yeni: sıradan bağımsız hamle geçmişi
+    private Stack<Move> moveHistory;
     private ScoringType scoringType;
+
+    // 🆕 Hamle listesi
+    private DefaultListModel<String> moveListModel = new DefaultListModel<>();
+    private int moveCount = 0;
 
     public GameController(Board board, GameFrame gameFrame, ScoringType scoringType) {
         this.board = board;
@@ -56,9 +61,12 @@ public class GameController {
         if (rulesChecker.isSuicideMove(x, y, currentPlayer)) return false;
 
         board.placeStone(x, y, currentPlayer);
-
-        // 🔄 Hamle geçmişine ekle
         moveHistory.push(new Move(x, y, currentPlayer));
+
+        // 🆕 Hamle açıklaması ekle
+        moveCount++;
+        String moveStr = moveCount + ". " + (currentPlayer == Stone.BLACK ? "⚫" : "⚪") + " (" + x + "," + y + ")";
+        moveListModel.addElement(moveStr);
 
         int removed = rulesChecker.captureStones(x, y, currentPlayer);
         if (currentPlayer == Stone.BLACK) blackCaptures += removed;
@@ -88,7 +96,11 @@ public class GameController {
     public void undoLastMove() {
         if (!moveHistory.isEmpty()) {
             Move last = moveHistory.pop();
-            board.removeStone(last.x, last.y); // 🔄 Taşı geri al
+            board.removeStone(last.x, last.y);
+            if (!moveListModel.isEmpty()) {
+                moveListModel.removeElementAt(moveListModel.size() - 1);
+                moveCount--;
+            }
             gameFrame.updateStats();
         }
     }
@@ -99,7 +111,9 @@ public class GameController {
         blackCaptures = 0;
         whiteCaptures = 0;
         lastMoveWasPass = false;
-        moveHistory.clear(); // 🔄 Geçmişi temizle
+        moveHistory.clear();
+        moveListModel.clear();
+        moveCount = 0;
         gameFrame.updateStats();
     }
 
@@ -160,5 +174,14 @@ public class GameController {
 
     public ScoringType getScoringType() {
         return scoringType;
+    }
+
+    // 🆕 Listeyi GameFrame'e verebilmek için getter
+    public DefaultListModel<String> getMoveListModel() {
+        return moveListModel;
+    }
+
+    public Board getBoard() {
+        return board;
     }
 }
