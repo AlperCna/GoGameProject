@@ -12,27 +12,54 @@ import java.awt.*;
 public class EndScreen extends JPanel {
 
     public EndScreen(JFrame frame, String winner, ScoringType scoringType) {
-        setLayout(new BorderLayout());
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setBackground(new Color(247, 241, 225)); // açık bej
 
-        JLabel message = new JLabel("Kazanan: " + winner, SwingConstants.CENTER);
-        message.setFont(new Font("Serif", Font.BOLD, 24));
-        add(message, BorderLayout.CENTER);
+        JLabel title = new JLabel("🏁 Oyun Bitti!");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        title.setForeground(new Color(30, 30, 30));
 
-        JPanel buttonPanel = new JPanel();
-        JButton restart = new JButton("Yeniden Başla");
-        JButton exit = new JButton("Çıkış");
+        JLabel result = new JLabel("Kazanan: " + winner);
+        result.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+        result.setAlignmentX(Component.CENTER_ALIGNMENT);
+        result.setForeground(new Color(50, 50, 50));
 
-        restart.addActionListener(e -> {
-            frame.setContentPane(new GameFrame(frame, scoringType).getMainPanel());
+        JLabel scoring = new JLabel("Skor Tipi: " + scoringType.toString());
+        scoring.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        scoring.setAlignmentX(Component.CENTER_ALIGNMENT);
+        scoring.setForeground(new Color(80, 80, 80));
+
+        JButton restartButton = createStyledButton("🔄 Yeni Oyun");
+        restartButton.addActionListener(e -> {
+            frame.setContentPane(new StartScreen(frame));
             frame.revalidate();
-            frame.repaint();
         });
 
-        exit.addActionListener(e -> System.exit(0));
+        JButton exitButton = createStyledButton("🚪 Çıkış");
+        exitButton.addActionListener(e -> System.exit(0));
 
-        buttonPanel.add(restart);
-        buttonPanel.add(exit);
-        add(buttonPanel, BorderLayout.SOUTH);
+        add(Box.createVerticalStrut(40));
+        add(title);
+        add(Box.createVerticalStrut(20));
+        add(result);
+        add(Box.createVerticalStrut(10));
+        add(scoring);
+        add(Box.createVerticalStrut(30));
+        add(restartButton);
+        add(Box.createVerticalStrut(10));
+        add(exitButton);
+    }
+
+    private JButton createStyledButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setBackground(new Color(189, 215, 238));
+        button.setFocusPainted(false);
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        button.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
+        return button;
     }
 }
+
 

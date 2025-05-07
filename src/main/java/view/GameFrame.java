@@ -14,6 +14,10 @@ import controller.GameController;
 import javax.swing.*;
 import java.awt.*;
 
+import javax.swing.JFrame;
+
+
+
 public class GameFrame {
 
     private JPanel mainPanel;
@@ -23,48 +27,29 @@ public class GameFrame {
     private GameController controller;
     private JList<String> moveList;
 
-    public GameFrame(JFrame parentFrame, ScoringType scoringType, int boardSize) {
-        // 🆕 Komi değeri kullanıcıdan alınır
-        String komiStr = JOptionPane.showInputDialog(
-            null,
-            "Beyaz oyuncu için komi (örn: 6.5):",
-            "Komi Belirle",
-            JOptionPane.QUESTION_MESSAGE
-        );
-        double komi = 6.5;
-        try {
-            if (komiStr != null && !komiStr.isBlank()) {
-                komi = Double.parseDouble(komiStr);
-            }
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(null, "Geçersiz komi! Varsayılan 6.5 kullanılacak.");
-        }
-
-        // 🎮 Tahta oluşturuluyor
+    public GameFrame(JFrame parentFrame, ScoringType scoringType, int boardSize, double komi) {
         Board board = new Board(boardSize);
-        boardPanel = new BoardPanel(board, this, scoringType, komi); // ✅ KOMİ parametresi gönderiliyor
-        controller = boardPanel.getController(); // ✅ controller boardPanel içinde oluşturuluyor
+        boardPanel = new BoardPanel(board, this, scoringType, komi);
+        controller = boardPanel.getController();
 
         // 🎮 Butonlar
-        JButton passButton = new JButton("✋ Pas Geç");
-        passButton.setFont(new Font("Arial", Font.PLAIN, 14));
+        JButton passButton = createStyledButton("✋ Pas Geç");
         passButton.addActionListener(e -> boardPanel.passMove());
 
-        JButton undoButton = new JButton("↩️ Geri Al");
-        undoButton.setFont(new Font("Arial", Font.PLAIN, 14));
+        JButton undoButton = createStyledButton("↩️ Geri Al");
         undoButton.addActionListener(e -> {
             controller.undoLastMove();
             boardPanel.repaint();
         });
 
-        JButton resetButton = new JButton("🔄 Sıfırla");
-        resetButton.setFont(new Font("Arial", Font.PLAIN, 14));
+        JButton resetButton = createStyledButton("🔄 Sıfırla");
         resetButton.addActionListener(e -> {
             controller.resetGame();
             boardPanel.repaint();
         });
 
         JPanel buttonPanel = new JPanel();
+        buttonPanel.setBackground(new Color(247, 241, 225));
         buttonPanel.add(passButton);
         buttonPanel.add(undoButton);
         buttonPanel.add(resetButton);
@@ -73,26 +58,29 @@ public class GameFrame {
         blackStats = new JLabel();
         whiteStats = new JLabel();
         styleLabel(blackStats, Color.BLACK);
-        styleLabel(whiteStats, Color.DARK_GRAY);
+        styleLabel(whiteStats, new Color(60, 60, 60));
 
-        JPanel scorePanel = new JPanel();
-        scorePanel.setLayout(new GridLayout(3, 1, 5, 5));
+        JPanel scorePanel = new JPanel(new GridLayout(2, 1, 5, 5));
+        scorePanel.setBackground(new Color(247, 241, 225));
         scorePanel.setBorder(BorderFactory.createTitledBorder("🏁 Skorlar"));
         scorePanel.add(blackStats);
         scorePanel.add(whiteStats);
 
         // 📜 Hamle listesi
         moveList = new JList<>(controller.getMoveListModel());
-        moveList.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        moveList.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         JScrollPane moveScroll = new JScrollPane(moveList);
         moveScroll.setBorder(BorderFactory.createTitledBorder("📜 Hamleler"));
         moveScroll.setPreferredSize(new Dimension(200, 300));
+        moveScroll.setBackground(new Color(255, 255, 250));
 
         JPanel eastPanel = new JPanel(new BorderLayout());
+        eastPanel.setBackground(new Color(247, 241, 225));
         eastPanel.add(scorePanel, BorderLayout.NORTH);
         eastPanel.add(moveScroll, BorderLayout.CENTER);
 
         JPanel contentPanel = new JPanel(new BorderLayout());
+        contentPanel.setBackground(new Color(247, 241, 225));
         contentPanel.add(boardPanel, BorderLayout.CENTER);
         contentPanel.add(eastPanel, BorderLayout.EAST);
         contentPanel.add(buttonPanel, BorderLayout.SOUTH);
@@ -101,6 +89,7 @@ public class GameFrame {
         scrollPane.setBorder(null);
 
         mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(new Color(247, 241, 225));
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
         updateStats();
@@ -110,12 +99,17 @@ public class GameFrame {
         parentFrame.setMinimumSize(new Dimension(minSize + 250, minSize + 100));
     }
 
-    public GameFrame(JFrame parentFrame, ScoringType scoringType) {
-        this(parentFrame, scoringType, 13); // default 13x13
+    private JButton createStyledButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setBackground(new Color(189, 215, 238));
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
+        return button;
     }
 
     private void styleLabel(JLabel label, Color color) {
-        label.setFont(new Font("Arial", Font.PLAIN, 14));
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         label.setForeground(color);
     }
 
@@ -142,5 +136,3 @@ public class GameFrame {
         topFrame.repaint();
     }
 }
-
-
