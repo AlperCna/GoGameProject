@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package controller;
 
 import model.Board;
@@ -35,7 +31,7 @@ public class GameController {
     private DefaultListModel<String> moveListModel = new DefaultListModel<>();
     private int moveCount = 0;
 
-    private double komi; // 🆕 Komi değeri
+    private double komi;
 
     public GameController(Board board, GameFrame gameFrame, ScoringType scoringType, double komi) {
         this.board = board;
@@ -75,36 +71,43 @@ public class GameController {
 
         lastMoveWasPass = false;
         switchTurn();
-        gameFrame.updateStats();
+
+        if (gameFrame != null) gameFrame.updateStats();
         return true;
     }
 
     public void handlePass() {
         if (lastMoveWasPass) {
             String winner = (getTotalScore(Stone.BLACK) > getTotalScore(Stone.WHITE)) ? "Siyah" : "Beyaz";
-            gameFrame.showGameOverScreen(winner);
+            if (gameFrame != null) gameFrame.showGameOverScreen(winner);
         } else {
             lastMoveWasPass = true;
             switchTurn();
         }
-        gameFrame.updateStats();
+
+        if (gameFrame != null) gameFrame.updateStats();
     }
 
-    private void switchTurn() {
-        currentPlayer = (currentPlayer == Stone.BLACK) ? Stone.WHITE : Stone.BLACK;
-    }
+  private void switchTurn() {
+    currentPlayer = (currentPlayer == Stone.BLACK) ? Stone.WHITE : Stone.BLACK;
+    if (gameFrame != null) gameFrame.updateTurnLabel();
+}
 
-    public void undoLastMove() {
-        if (!moveHistory.isEmpty()) {
-            Move last = moveHistory.pop();
-            board.removeStone(last.x, last.y);
-            if (!moveListModel.isEmpty()) {
-                moveListModel.removeElementAt(moveListModel.size() - 1);
-                moveCount--;
-            }
-            gameFrame.updateStats();
+
+    public Move undoLastMove() {
+    if (!moveHistory.isEmpty()) {
+        Move last = moveHistory.pop();
+        board.removeStone(last.x, last.y);
+        if (!moveListModel.isEmpty()) {
+            moveListModel.removeElementAt(moveListModel.size() - 1);
+            moveCount--;
         }
+        if (gameFrame != null) gameFrame.updateStats();
+        return last;
     }
+    return null;
+}
+
 
     public void resetGame() {
         board.clearBoard();
@@ -115,7 +118,7 @@ public class GameController {
         moveHistory.clear();
         moveListModel.clear();
         moveCount = 0;
-        gameFrame.updateStats();
+        if (gameFrame != null) gameFrame.updateStats();
     }
 
     public int calculateTerritory(Stone player) {
@@ -191,5 +194,29 @@ public class GameController {
     public double getKomi() {
         return komi;
     }
+    public GameFrame getGameFrame() {
+    return gameFrame;
+}
+    public void updateStats() {
+    if (gameFrame != null) {
+        gameFrame.updateStats();
+    }
+}
+    public void clearMoveHistory() {
+    moveHistory.clear();
+    moveCount = 0;
 }
 
+public void addMoveToHistory(int x, int y, Stone s) {
+    Move m = new Move(x, y, s);
+    if (!moveHistory.contains(m)) {
+        moveHistory.push(m);
+        moveCount++;
+    }
+}
+public void setCurrentPlayer(Stone player) {
+    this.currentPlayer = player;
+}
+
+    
+}

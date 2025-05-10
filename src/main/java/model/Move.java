@@ -9,6 +9,7 @@ package model;
  * @author Alper
  */
 
+import java.util.Objects;
 
 public class Move {
     public int x, y;
@@ -19,4 +20,17 @@ public class Move {
         this.y = y;
         this.color = color;
     }
+
+  @Override
+public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+    Move move = (Move) obj;
+    return x == move.x && y == move.y && color == move.color;
+}
+
+@Override
+public int hashCode() {
+    return java.util.Objects.hash(x, y, color);
+}
 }

@@ -5,48 +5,48 @@ package view;
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 
-
 import model.Board;
 import model.ScoringType;
 import model.Stone;
 import controller.GameController;
+import ClientandServer.GoClient;
 
 import javax.swing.*;
 import java.awt.*;
-
-import javax.swing.JFrame;
-
-
 
 public class GameFrame {
 
     private JPanel mainPanel;
     private JLabel blackStats;
     private JLabel whiteStats;
+    private JLabel turnLabel;
     private BoardPanel boardPanel;
     private GameController controller;
     private JList<String> moveList;
 
-    public GameFrame(JFrame parentFrame, ScoringType scoringType, int boardSize, double komi) {
+    public GameFrame(JFrame parentFrame, ScoringType scoringType, int boardSize, double komi, boolean isOnline, GoClient client) {
         Board board = new Board(boardSize);
-        boardPanel = new BoardPanel(board, this, scoringType, komi);
+        boardPanel = new BoardPanel(board, this, scoringType, komi, isOnline, client);
         controller = boardPanel.getController();
 
-        // 🎮 Butonlar
+        // 🔁 "Sıra sende" etiketi
+        turnLabel = new JLabel("⏳ Yükleniyor...");
+        turnLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        turnLabel.setForeground(new Color(40, 40, 40));
+        turnLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(new Color(247, 241, 225));
+        topPanel.add(turnLabel, BorderLayout.CENTER);
+
         JButton passButton = createStyledButton("✋ Pas Geç");
-        passButton.addActionListener(e -> boardPanel.passMove());
+        passButton.addActionListener(e -> boardPanel.sendPass());
 
         JButton undoButton = createStyledButton("↩️ Geri Al");
-        undoButton.addActionListener(e -> {
-            controller.undoLastMove();
-            boardPanel.repaint();
-        });
+        undoButton.addActionListener(e -> boardPanel.sendUndo());
 
         JButton resetButton = createStyledButton("🔄 Sıfırla");
-        resetButton.addActionListener(e -> {
-            controller.resetGame();
-            boardPanel.repaint();
-        });
+        resetButton.addActionListener(e -> boardPanel.sendReset());
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.setBackground(new Color(247, 241, 225));
@@ -54,7 +54,6 @@ public class GameFrame {
         buttonPanel.add(undoButton);
         buttonPanel.add(resetButton);
 
-        // 🏁 Skor alanı
         blackStats = new JLabel();
         whiteStats = new JLabel();
         styleLabel(blackStats, Color.BLACK);
@@ -66,7 +65,6 @@ public class GameFrame {
         scorePanel.add(blackStats);
         scorePanel.add(whiteStats);
 
-        // 📜 Hamle listesi
         moveList = new JList<>(controller.getMoveListModel());
         moveList.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         JScrollPane moveScroll = new JScrollPane(moveList);
@@ -81,6 +79,7 @@ public class GameFrame {
 
         JPanel contentPanel = new JPanel(new BorderLayout());
         contentPanel.setBackground(new Color(247, 241, 225));
+        contentPanel.add(topPanel, BorderLayout.NORTH);
         contentPanel.add(boardPanel, BorderLayout.CENTER);
         contentPanel.add(eastPanel, BorderLayout.EAST);
         contentPanel.add(buttonPanel, BorderLayout.SOUTH);
@@ -93,6 +92,7 @@ public class GameFrame {
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
         updateStats();
+        updateTurnLabel();
         parentFrame.pack();
 
         int minSize = boardSize * 45;
@@ -124,6 +124,18 @@ public class GameFrame {
         whiteStats.setText("⚪ Beyaz ➤ Puan: " + whiteTotal + " (Esir: " + whiteEsir + ") + Komi: " + komi);
     }
 
+    public void updateTurnLabel() {
+    Stone current = controller.getCurrentPlayer();         // Şu an sıradaki oyuncu
+    Stone myColor = boardPanel.getMyColor();               // Bu ekranın oyuncusu
+
+    if (current == myColor) {
+        turnLabel.setText("🔵 Sıra sende!");
+    } else {
+        turnLabel.setText("⏳ Rakip oynuyor...");
+    }
+}
+
+
     public JPanel getMainPanel() {
         return mainPanel;
     }
@@ -135,4 +147,9 @@ public class GameFrame {
         topFrame.revalidate();
         topFrame.repaint();
     }
+
+    public BoardPanel getBoardPanel() {
+        return boardPanel;
+    }
 }
+
