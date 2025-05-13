@@ -68,7 +68,7 @@ public class StartScreen extends JPanel {
         add(boardSizeBox);
         add(Box.createVerticalStrut(25));
 
-        JButton offlineButton = new JButton("🎮 Offline Başla");
+        JButton offlineButton = new JButton("🎮 Offline Oyna");
         offlineButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
         offlineButton.setBackground(new Color(189, 215, 238));
         offlineButton.setFocusPainted(false);
