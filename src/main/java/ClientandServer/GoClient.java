@@ -22,7 +22,7 @@ public class GoClient {
     private PrintWriter out;
     private BufferedReader in;
     private BoardPanel boardPanel;
-    private Stone myColor;  // Oyuncunun taş rengi
+    private Stone myColor;  // Oyuncunun taş regi
 
     public GoClient(String ip, int port) throws IOException {
         socket = new Socket(ip, port);
