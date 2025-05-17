@@ -47,12 +47,23 @@ public class GameFrame {
 
         JButton resetButton = createStyledButton("🔄 Sıfırla");
         resetButton.addActionListener(e -> boardPanel.sendReset());
+        
+        
+        JButton surrenderButton = createStyledButton("🏳️ Pes Et");
+surrenderButton.addActionListener(e -> boardPanel.sendSurrender());
+
+
+
+
+
+
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.setBackground(new Color(247, 241, 225));
         buttonPanel.add(passButton);
         buttonPanel.add(undoButton);
         buttonPanel.add(resetButton);
+        buttonPanel.add(surrenderButton);
 
         blackStats = new JLabel();
         whiteStats = new JLabel();

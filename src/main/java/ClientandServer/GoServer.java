@@ -8,113 +8,52 @@ package ClientandServer;
  *
  * @author Alper
  */
-import controller.GameController;
-import model.Board;
-import model.Move;
-import model.ScoringType;
-import model.Stone;
+
 
 import java.io.*;
 import java.net.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class GoServer {
 
     private static final int PORT = 12345;
-    private static GameController gameController;
-    private static PrintWriter out1;
-    private static PrintWriter out2;
-    private static boolean isPlayer1Turn = true;
+    private static final ExecutorService pool = Executors.newCachedThreadPool();
+    private static final BlockingQueue<PlayerConnection> waitingPlayers = new LinkedBlockingQueue<>();
+    private static final AtomicInteger playerCounter = new AtomicInteger(1); // Her oyuncuya numara vermek için
 
     public static void main(String[] args) {
         System.out.println("🟩 Go sunucusu başlatıldı. Oyuncular bekleniyor...");
+
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            Socket player1 = serverSocket.accept();
-            System.out.println("🔗 Oyuncu 1 bağlandı.");
-            out1 = new PrintWriter(player1.getOutputStream(), true);
-            BufferedReader in1 = new BufferedReader(new InputStreamReader(player1.getInputStream()));
-            out1.println("BLACK");
+            while (true) {
+                Socket playerSocket = serverSocket.accept();
+                int id = playerCounter.getAndIncrement();
+                PlayerConnection player = new PlayerConnection(playerSocket, "Player" + id);
+                System.out.println("🔗 Yeni oyuncu bağlandı: " + player.name);
 
-            Socket player2 = serverSocket.accept();
-            System.out.println("🔗 Oyuncu 2 bağlandı.");
-            out2 = new PrintWriter(player2.getOutputStream(), true);
-            BufferedReader in2 = new BufferedReader(new InputStreamReader(player2.getInputStream()));
-            out2.println("WHITE");
+                waitingPlayers.put(player);
 
-            Board board = new Board(13);
-            gameController = new GameController(board, null, ScoringType.JAPANESE, 6.5);
+                if (waitingPlayers.size() >= 2) {
+                    PlayerConnection p1 = waitingPlayers.take();
+                    PlayerConnection p2 = waitingPlayers.take();
 
-            ExecutorService pool = Executors.newFixedThreadPool(2);
-            pool.execute(new ServerSidePlayerHandler(in1, out1, Stone.BLACK));
-            pool.execute(new ServerSidePlayerHandler(in2, out2, Stone.WHITE));
-        } catch (IOException e) {
+                    pool.execute(new GameSession(p1, p2));
+                }
+            }
+        } catch (IOException | InterruptedException e) {
             System.out.println("❌ Sunucu hatası: " + e.getMessage());
         }
     }
 
-    static class ServerSidePlayerHandler implements Runnable {
+    public static class PlayerConnection {
+        public Socket socket;
+        public String name;
 
-        private BufferedReader in;
-        private PrintWriter out;
-        private Stone playerColor;
-
-        public ServerSidePlayerHandler(BufferedReader in, PrintWriter out, Stone color) {
-            this.in = in;
-            this.out = out;
-            this.playerColor = color;
-        }
-
-        @Override
-        public void run() {
-            String line;
-            try {
-                while ((line = in.readLine()) != null) {
-                    System.out.println("👉 Sunucuda komut alındı: " + line);
-
-                    if (line.startsWith("MOVE")) {
-                        String[] parts = line.split(" ");
-                        int x = Integer.parseInt(parts[1]);
-                        int y = Integer.parseInt(parts[2]);
-
-                        boolean isCorrectTurn = (playerColor == Stone.BLACK && isPlayer1Turn)
-                                || (playerColor == Stone.WHITE && !isPlayer1Turn);
-
-                        if (!isCorrectTurn) {
-                            out.println("MESAJ Sıra sende değil!");
-                            continue;
-                        }
-
-                        boolean success = gameController.handleMove(x, y);
-                        if (success) {
-                            out1.println("MOVE " + x + " " + y);
-                            out2.println("MOVE " + x + " " + y);
-                            isPlayer1Turn = !isPlayer1Turn;
-                        } else {
-                            out.println("MESAJ Geçersiz hamle!");
-                        }
-                    } else if (line.equals("PASS")) {
-                        gameController.handlePass();
-                        out1.println("PASS");
-                        out2.println("PASS");
-                        isPlayer1Turn = !isPlayer1Turn;
-                    } else if (line.equals("UNDO")) {
-                        Move undone = gameController.undoLastMove();
-                        if (undone != null) {
-                            out1.println("UNDO " + undone.x + " " + undone.y);
-                            out2.println("UNDO " + undone.x + " " + undone.y);
-                            isPlayer1Turn = !isPlayer1Turn;
-                        }
-                    } else if (line.equals("RESET")) {
-                        gameController.resetGame();
-                        out1.println("RESET");
-                        out2.println("RESET");
-                        isPlayer1Turn = true;
-                    }
-
-                }
-            } catch (IOException e) {
-                System.out.println("❌ " + playerColor + " bağlantı hatası.");
-            }
+        public PlayerConnection(Socket socket, String name) {
+            this.socket = socket;
+            this.name = name;
         }
     }
 }
+

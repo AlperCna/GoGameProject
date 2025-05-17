@@ -60,6 +60,10 @@ public class EndScreen extends JPanel {
         button.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
         return button;
     }
+    
+    
 }
+
+
 
 

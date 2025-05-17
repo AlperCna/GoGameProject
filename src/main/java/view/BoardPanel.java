@@ -212,5 +212,17 @@ public class BoardPanel extends JPanel {
     public Stone getMyColor() {
     return client != null ? client.getMyColor() : Stone.BLACK;
 }
+public void sendSurrender() {
+    if (isOnline && client != null) {
+        client.sendSurrender();
+    } else {
+        controller.getGameFrame().showGameOverScreen("Rakip");
+    }
+}
+
+
+
+
+
 
 }
