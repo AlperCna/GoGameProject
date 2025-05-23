@@ -94,7 +94,7 @@ public class GameController {
 }
 
 
-    public Move undoLastMove() {
+   public Move undoLastMove() {
     if (!moveHistory.isEmpty()) {
         Move last = moveHistory.pop();
         board.removeStone(last.x, last.y);
@@ -102,11 +102,19 @@ public class GameController {
             moveListModel.removeElementAt(moveListModel.size() - 1);
             moveCount--;
         }
-        if (gameFrame != null) gameFrame.updateStats();
+
+        // 🔁 Oyuncu sırasını geri al
+        currentPlayer = last.color;
+
+        if (gameFrame != null) {
+            gameFrame.updateStats();
+            gameFrame.updateTurnLabel();
+        }
         return last;
     }
     return null;
 }
+
 
 
     public void resetGame() {

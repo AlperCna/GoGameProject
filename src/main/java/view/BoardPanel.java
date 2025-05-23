@@ -69,21 +69,25 @@ public class BoardPanel extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        int size = board.getSize();
 
-        g.setColor(Color.BLACK);
-        for (int i = 0; i < size; i++) {
-            g.drawLine(CELL_SIZE / 2, CELL_SIZE / 2 + i * CELL_SIZE,
+    Graphics2D g2 = (Graphics2D) g;
+    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+    int size = board.getSize();
+
+    g2.setColor(Color.BLACK);
+    for (int i = 0; i < size; i++) {
+        g2.drawLine(CELL_SIZE / 2, CELL_SIZE / 2 + i * CELL_SIZE,
                     CELL_SIZE / 2 + (size - 1) * CELL_SIZE, CELL_SIZE / 2 + i * CELL_SIZE);
-            g.drawLine(CELL_SIZE / 2 + i * CELL_SIZE, CELL_SIZE / 2,
+        g2.drawLine(CELL_SIZE / 2 + i * CELL_SIZE, CELL_SIZE / 2,
                     CELL_SIZE / 2 + i * CELL_SIZE, CELL_SIZE / 2 + (size - 1) * CELL_SIZE);
-        }
+    }
 
         for (int x = 0; x < size; x++) {
             for (int y = 0; y < size; y++) {
                 Stone s = board.getStone(x, y);
                 if (s != Stone.EMPTY) {
-                    drawStone(g, x, y, s);
+                    drawStone(g2, x, y, s);
                 }
             }
         }
@@ -99,17 +103,17 @@ public class BoardPanel extends JPanel {
         }
     }
 
-    private void drawStone(Graphics g, int x, int y, Stone stone) {
-        if (stone == Stone.BLACK) {
-            g.setColor(Color.BLACK);
-        } else if (stone == Stone.WHITE) {
-            g.setColor(Color.WHITE);
-        }
-
-        g.fillOval(x * CELL_SIZE + 5, y * CELL_SIZE + 5, CELL_SIZE - 10, CELL_SIZE - 10);
+  private void drawStone(Graphics2D g, int x, int y, Stone stone) {
+    if (stone == Stone.BLACK) {
         g.setColor(Color.BLACK);
-        g.drawOval(x * CELL_SIZE + 5, y * CELL_SIZE + 5, CELL_SIZE - 10, CELL_SIZE - 10);
+    } else if (stone == Stone.WHITE) {
+        g.setColor(Color.WHITE);
     }
+
+    g.fillOval(x * CELL_SIZE + 5, y * CELL_SIZE + 5, CELL_SIZE - 10, CELL_SIZE - 10);
+    g.setColor(Color.BLACK);
+    g.drawOval(x * CELL_SIZE + 5, y * CELL_SIZE + 5, CELL_SIZE - 10, CELL_SIZE - 10);
+}
 
     public GameController getController() {
         return controller;

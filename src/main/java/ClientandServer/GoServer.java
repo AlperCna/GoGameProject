@@ -20,16 +20,25 @@ public class GoServer {
     private static final int PORT = 12345;
     private static final ExecutorService pool = Executors.newCachedThreadPool();
     private static final BlockingQueue<PlayerConnection> waitingPlayers = new LinkedBlockingQueue<>();
-    private static final AtomicInteger playerCounter = new AtomicInteger(1); // Her oyuncuya numara vermek için
+    private static final AtomicInteger playerCounter = new AtomicInteger(1); // fallback isim numarası
 
     public static void main(String[] args) {
-        System.out.println("🟩 Go sunucusu başlatıldı. Oyuncular bekleniyor...");
+        System.out.println("Go sunucusu başlatıldı. Oyuncular bekleniyor...");
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             while (true) {
                 Socket playerSocket = serverSocket.accept();
-                int id = playerCounter.getAndIncrement();
-                PlayerConnection player = new PlayerConnection(playerSocket, "Player" + id);
+
+                // Önce isim dinlenir
+                BufferedReader tempIn = new BufferedReader(new InputStreamReader(playerSocket.getInputStream()));
+                String nameLine = tempIn.readLine(); // örn: NAME Alper
+
+                String name = "Player" + playerCounter.getAndIncrement(); // fallback
+                if (nameLine != null && nameLine.startsWith("NAME ")) {
+                    name = nameLine.substring(5).trim();
+                }
+
+                PlayerConnection player = new PlayerConnection(playerSocket, name);
                 System.out.println("🔗 Yeni oyuncu bağlandı: " + player.name);
 
                 waitingPlayers.put(player);

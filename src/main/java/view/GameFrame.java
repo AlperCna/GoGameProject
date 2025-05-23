@@ -24,13 +24,21 @@ public class GameFrame {
     private GameController controller;
     private JList<String> moveList;
 
+    private JButton passButton;
+    private JButton undoButton;
+    private JButton resetButton;
+    private JButton surrenderButton;
+
+    private boolean isOnline;
+
     public GameFrame(JFrame parentFrame, ScoringType scoringType, int boardSize, double komi, boolean isOnline, GoClient client) {
+        this.isOnline = isOnline;
+
         Board board = new Board(boardSize);
         boardPanel = new BoardPanel(board, this, scoringType, komi, isOnline, client);
         controller = boardPanel.getController();
 
-        // 🔁 "Sıra sende" etiketi
-        turnLabel = new JLabel("⏳ Yükleniyor...");
+        turnLabel = new JLabel(" Yükleniyor...");
         turnLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         turnLabel.setForeground(new Color(40, 40, 40));
         turnLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -39,24 +47,17 @@ public class GameFrame {
         topPanel.setBackground(new Color(247, 241, 225));
         topPanel.add(turnLabel, BorderLayout.CENTER);
 
-        JButton passButton = createStyledButton("✋ Pas Geç");
+        passButton = createStyledButton(" Pas Geç");
         passButton.addActionListener(e -> boardPanel.sendPass());
 
-        JButton undoButton = createStyledButton("↩️ Geri Al");
+        undoButton = createStyledButton("️ Geri Al");
         undoButton.addActionListener(e -> boardPanel.sendUndo());
 
-        JButton resetButton = createStyledButton("🔄 Sıfırla");
+        resetButton = createStyledButton("? Sıfırla");
         resetButton.addActionListener(e -> boardPanel.sendReset());
-        
-        
-        JButton surrenderButton = createStyledButton("🏳️ Pes Et");
-surrenderButton.addActionListener(e -> boardPanel.sendSurrender());
 
-
-
-
-
-
+        surrenderButton = createStyledButton("?️ Pes Et");
+        surrenderButton.addActionListener(e -> boardPanel.sendSurrender());
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.setBackground(new Color(247, 241, 225));
@@ -131,21 +132,33 @@ surrenderButton.addActionListener(e -> boardPanel.sendSurrender());
         int whiteEsir = controller.getWhiteCaptures();
         double komi = controller.getKomi();
 
-        blackStats.setText("⚫ Siyah ➤ Puan: " + blackTotal + " (Esir: " + blackEsir + ")");
-        whiteStats.setText("⚪ Beyaz ➤ Puan: " + whiteTotal + " (Esir: " + whiteEsir + ") + Komi: " + komi);
+        blackStats.setText(" Siyah ➤ Puan: " + blackTotal + " (Esir: " + blackEsir + ")");
+        whiteStats.setText(" Beyaz ➤ Puan: " + whiteTotal + " (Esir: " + whiteEsir + ") + Komi: " + komi);
     }
 
     public void updateTurnLabel() {
-    Stone current = controller.getCurrentPlayer();         // Şu an sıradaki oyuncu
-    Stone myColor = boardPanel.getMyColor();               // Bu ekranın oyuncusu
+        Stone current = controller.getCurrentPlayer();         // Şu an sıradaki oyuncu
+        Stone myColor = boardPanel.getMyColor();               // Bu ekranın oyuncusu
 
-    if (current == myColor) {
-        turnLabel.setText("🔵 Sıra sende!");
-    } else {
-        turnLabel.setText("⏳ Rakip oynuyor...");
+        boolean myTurn = current == myColor;
+
+        if (myTurn) {
+            turnLabel.setText("? Sıra sende!");
+        } else {
+            turnLabel.setText(" Rakip oynuyor...");
+        }
+
+        if (isOnline) {
+            passButton.setEnabled(myTurn);
+            surrenderButton.setEnabled(myTurn);
+        } else {
+            // Offline modda tüm butonlar her zaman açık
+            passButton.setEnabled(true);
+            undoButton.setEnabled(true);
+            resetButton.setEnabled(true);
+            surrenderButton.setEnabled(true);
+        }
     }
-}
-
 
     public JPanel getMainPanel() {
         return mainPanel;
@@ -163,4 +176,6 @@ surrenderButton.addActionListener(e -> boardPanel.sendSurrender());
         return boardPanel;
     }
 }
+
+
 

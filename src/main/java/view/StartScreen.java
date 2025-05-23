@@ -11,12 +11,16 @@ import javax.swing.*;
 import java.awt.*;
 
 public class StartScreen extends JPanel {
+    private JComboBox<String> scoringTypeBox;
+    private JComboBox<String> komiBox;
+    private JComboBox<String> boardSizeBox;
+    private JTextField nameField;
 
     public StartScreen(JFrame frame) {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBackground(new Color(247, 241, 225));
 
-        JLabel title = new JLabel("⚓ Go Oyunu");
+        JLabel title = new JLabel(" Go Oyunu");
         title.setFont(new Font("Segoe UI", Font.BOLD, 28));
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
         title.setForeground(new Color(30, 30, 30));
@@ -24,18 +28,30 @@ public class StartScreen extends JPanel {
         add(title);
         add(Box.createVerticalStrut(30));
 
+        JLabel nameLabel = new JLabel("İsminizi girin:");
+        nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        add(nameLabel);
+
+        nameField = new JTextField();
+        nameField.setMaximumSize(new Dimension(150, 30));
+        nameField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        nameField.setAlignmentX(Component.CENTER_ALIGNMENT);
+        add(nameField);
+        add(Box.createVerticalStrut(15));
+
         JLabel scoringLabel = new JLabel("Skor Tipi:");
         scoringLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         scoringLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         add(scoringLabel);
 
         String[] scoringOptions = {"Japon", "Çin", "Taş"};
-        JComboBox<String> scoringBox = new JComboBox<>(scoringOptions);
-        scoringBox.setMaximumSize(new Dimension(150, 30));
-        scoringBox.setBackground(Color.WHITE);
-        scoringBox.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        scoringBox.setAlignmentX(Component.CENTER_ALIGNMENT);
-        add(scoringBox);
+        scoringTypeBox = new JComboBox<>(scoringOptions);
+        scoringTypeBox.setMaximumSize(new Dimension(150, 30));
+        scoringTypeBox.setBackground(Color.WHITE);
+        scoringTypeBox.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        scoringTypeBox.setAlignmentX(Component.CENTER_ALIGNMENT);
+        add(scoringTypeBox);
         add(Box.createVerticalStrut(15));
 
         JLabel komiLabel = new JLabel("Komi:");
@@ -44,7 +60,7 @@ public class StartScreen extends JPanel {
         add(komiLabel);
 
         String[] komiOptions = {"Komi yok", "0.5", "5.5", "6.5", "7.5", "9.5"};
-        JComboBox<String> komiBox = new JComboBox<>(komiOptions);
+        komiBox = new JComboBox<>(komiOptions);
         komiBox.setSelectedItem("6.5");
         komiBox.setMaximumSize(new Dimension(150, 30));
         komiBox.setBackground(Color.WHITE);
@@ -59,7 +75,7 @@ public class StartScreen extends JPanel {
         add(boardLabel);
 
         String[] boardSizes = {"9x9", "13x13", "19x19"};
-        JComboBox<String> boardSizeBox = new JComboBox<>(boardSizes);
+        boardSizeBox = new JComboBox<>(boardSizes);
         boardSizeBox.setSelectedItem("13x13");
         boardSizeBox.setMaximumSize(new Dimension(150, 30));
         boardSizeBox.setBackground(Color.WHITE);
@@ -68,7 +84,7 @@ public class StartScreen extends JPanel {
         add(boardSizeBox);
         add(Box.createVerticalStrut(25));
 
-        JButton offlineButton = new JButton("🎮 Offline Başla");
+        JButton offlineButton = new JButton(" Offline Başla");
         offlineButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
         offlineButton.setBackground(new Color(189, 215, 238));
         offlineButton.setFocusPainted(false);
@@ -76,7 +92,7 @@ public class StartScreen extends JPanel {
         add(offlineButton);
 
         offlineButton.addActionListener(e -> {
-            ScoringType type = getScoringType(scoringBox);
+            ScoringType type = getScoringType(scoringTypeBox);
             double komi = getKomi(komiBox);
             int boardSize = getBoardSize(boardSizeBox);
             GameFrame gameFrame = new GameFrame(frame, type, boardSize, komi, false, null);
@@ -84,7 +100,7 @@ public class StartScreen extends JPanel {
             frame.revalidate();
         });
 
-        JButton onlineButton = new JButton("🌐 Online Oyna");
+        JButton onlineButton = new JButton(" Online Oyna");
         onlineButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
         onlineButton.setBackground(new Color(173, 235, 190));
         onlineButton.setFocusPainted(false);
@@ -93,23 +109,35 @@ public class StartScreen extends JPanel {
         add(onlineButton);
 
         onlineButton.addActionListener(e -> {
-            try {
-                String ip = JOptionPane.showInputDialog(this, "Sunucu IP adresini giriniz:", "127.0.0.1");
-                if (ip == null || ip.isBlank()) return;
+    try {
+        String name = nameField.getText().trim();
+        if (name.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Lütfen isminizi girin.");
+            return;
+        }
 
-                ScoringType type = getScoringType(scoringBox);
-                double komi = getKomi(komiBox);
-                int boardSize = getBoardSize(boardSizeBox);
+        String ip = JOptionPane.showInputDialog(this, "Sunucu IP adresini giriniz:", "127.0.0.1");
+        if (ip == null || ip.isBlank()) return;
 
-                GoClient client = new GoClient(ip.trim(), 12345);
-                GameFrame gameFrame = new GameFrame(frame, type, boardSize, komi, true, client);
-                client.setBoardPanel(gameFrame.getBoardPanel());
-                frame.setContentPane(gameFrame.getMainPanel());
-                frame.revalidate();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Bağlantı hatası: " + ex.getMessage());
-            }
-        });
+        ScoringType type = getScoringType(scoringTypeBox);
+        double komi = getKomi(komiBox);
+        int boardSize = getBoardSize(boardSizeBox);
+
+        // GoClient nesnesini oyuncu adı ve pencere ile başlat
+        GoClient client = new GoClient(ip.trim(), 12345, name, frame);
+
+        // İlk oyuncu olduğunu varsayarak SETUP mesajını gönder
+        client.sendSetup(boardSize, type, komi);
+
+        // Yeni GameFrame oluştur (ilk oyuncu için)
+        GameFrame gameFrame = new GameFrame(frame, type, boardSize, komi, true, client);
+        client.setBoardPanel(gameFrame.getBoardPanel());
+        frame.setContentPane(gameFrame.getMainPanel());
+        frame.revalidate();
+    } catch (Exception ex) {
+        JOptionPane.showMessageDialog(this, "Bağlantı hatası: " + ex.getMessage());
+    }
+});
     }
 
     private ScoringType getScoringType(JComboBox<String> box) {
