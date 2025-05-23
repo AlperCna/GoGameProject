@@ -10,12 +10,27 @@ import ClientandServer.GoClient;
 import javax.swing.*;
 import java.awt.*;
 
+/*
+ * StartScreen.java
+ *
+ * This class represents the initial menu screen where the player:
+ * - Enters their name
+ * - Chooses board size, komi, and scoring type
+ * - Starts the game in offline or online mode
+ */
+
 public class StartScreen extends JPanel {
+
     private JComboBox<String> scoringTypeBox;
     private JComboBox<String> komiBox;
     private JComboBox<String> boardSizeBox;
     private JTextField nameField;
 
+    /**
+     * Constructs the start screen UI.
+     *
+     * @param frame The main JFrame in which this panel is displayed
+     */
     public StartScreen(JFrame frame) {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBackground(new Color(247, 241, 225));
@@ -28,6 +43,7 @@ public class StartScreen extends JPanel {
         add(title);
         add(Box.createVerticalStrut(30));
 
+        // Player name input
         JLabel nameLabel = new JLabel("İsminizi girin:");
         nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -40,6 +56,7 @@ public class StartScreen extends JPanel {
         add(nameField);
         add(Box.createVerticalStrut(15));
 
+        // Scoring type selection
         JLabel scoringLabel = new JLabel("Skor Tipi:");
         scoringLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         scoringLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -54,6 +71,7 @@ public class StartScreen extends JPanel {
         add(scoringTypeBox);
         add(Box.createVerticalStrut(15));
 
+        // Komi selection
         JLabel komiLabel = new JLabel("Komi:");
         komiLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         komiLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -69,6 +87,7 @@ public class StartScreen extends JPanel {
         add(komiBox);
         add(Box.createVerticalStrut(15));
 
+        // Board size selection
         JLabel boardLabel = new JLabel("Tahta Boyutu:");
         boardLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         boardLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -84,6 +103,7 @@ public class StartScreen extends JPanel {
         add(boardSizeBox);
         add(Box.createVerticalStrut(25));
 
+        // Offline game button
         JButton offlineButton = new JButton(" Offline Başla");
         offlineButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
         offlineButton.setBackground(new Color(189, 215, 238));
@@ -91,6 +111,7 @@ public class StartScreen extends JPanel {
         offlineButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         add(offlineButton);
 
+        // Offline game action
         offlineButton.addActionListener(e -> {
             ScoringType type = getScoringType(scoringTypeBox);
             double komi = getKomi(komiBox);
@@ -100,6 +121,7 @@ public class StartScreen extends JPanel {
             frame.revalidate();
         });
 
+        // Online game button
         JButton onlineButton = new JButton(" Online Oyna");
         onlineButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
         onlineButton.setBackground(new Color(173, 235, 190));
@@ -108,38 +130,42 @@ public class StartScreen extends JPanel {
         add(Box.createVerticalStrut(10));
         add(onlineButton);
 
+        /**
+         * Handles the online play button click: connects to the server and starts the game.
+         */
         onlineButton.addActionListener(e -> {
-    try {
-        String name = nameField.getText().trim();
-        if (name.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Lütfen isminizi girin.");
-            return;
-        }
+            try {
+                String name = nameField.getText().trim();
+                if (name.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Lütfen isminizi girin.");
+                    return;
+                }
 
-        String ip = JOptionPane.showInputDialog(this, "Sunucu IP adresini giriniz:", "127.0.0.1");
-        if (ip == null || ip.isBlank()) return;
+                String ip = JOptionPane.showInputDialog(this, "Sunucu IP adresini giriniz:", "127.0.0.1");
+                if (ip == null || ip.isBlank()) return;
 
-        ScoringType type = getScoringType(scoringTypeBox);
-        double komi = getKomi(komiBox);
-        int boardSize = getBoardSize(boardSizeBox);
+                ScoringType type = getScoringType(scoringTypeBox);
+                double komi = getKomi(komiBox);
+                int boardSize = getBoardSize(boardSizeBox);
 
-        // GoClient nesnesini oyuncu adı ve pencere ile başlat
-        GoClient client = new GoClient(ip.trim(), 12345, name, frame);
+                // Create and connect the client
+                GoClient client = new GoClient(ip.trim(), 12345, name, frame);
+                client.sendSetup(boardSize, type, komi);
 
-        // İlk oyuncu olduğunu varsayarak SETUP mesajını gönder
-        client.sendSetup(boardSize, type, komi);
-
-        // Yeni GameFrame oluştur (ilk oyuncu için)
-        GameFrame gameFrame = new GameFrame(frame, type, boardSize, komi, true, client);
-        client.setBoardPanel(gameFrame.getBoardPanel());
-        frame.setContentPane(gameFrame.getMainPanel());
-        frame.revalidate();
-    } catch (Exception ex) {
-        JOptionPane.showMessageDialog(this, "Bağlantı hatası: " + ex.getMessage());
-    }
-});
+                // Launch the game
+                GameFrame gameFrame = new GameFrame(frame, type, boardSize, komi, true, client);
+                client.setBoardPanel(gameFrame.getBoardPanel());
+                frame.setContentPane(gameFrame.getMainPanel());
+                frame.revalidate();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Bağlantı hatası: " + ex.getMessage());
+            }
+        });
     }
 
+    /**
+     * Returns the selected scoring type.
+     */
     private ScoringType getScoringType(JComboBox<String> box) {
         return switch ((String) box.getSelectedItem()) {
             case "Çin" -> ScoringType.CHINESE;
@@ -148,11 +174,17 @@ public class StartScreen extends JPanel {
         };
     }
 
+    /**
+     * Returns the selected komi value.
+     */
     private double getKomi(JComboBox<String> box) {
         String selected = (String) box.getSelectedItem();
         return selected.equals("Komi yok") ? 0.0 : Double.parseDouble(selected);
     }
 
+    /**
+     * Returns the selected board size.
+     */
     private int getBoardSize(JComboBox<String> box) {
         return switch ((String) box.getSelectedItem()) {
             case "9x9" -> 9;

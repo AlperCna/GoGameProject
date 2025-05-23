@@ -4,8 +4,6 @@
  */
 package ClientandServer;
 
-
-
 import controller.GameController;
 import model.Board;
 import model.Move;
@@ -21,35 +19,40 @@ import ClientandServer.GoServer.PlayerConnection;
 
 public class GameSession implements Runnable {
 
-    private PlayerConnection player1;
-    private PlayerConnection player2;
+    private PlayerConnection player1;  // First connected player
+    private PlayerConnection player2;  // Second connected player
 
     private GameController gameController;
-    private PrintWriter out1;
-    private PrintWriter out2;
-    private BufferedReader in1;
-    private BufferedReader in2;
+    private PrintWriter out1, out2;    // Output streams to both players
+    private BufferedReader in1, in2;   // Input streams from both players
 
-    private boolean isPlayer1Turn = true;
+    private boolean isPlayer1Turn = true; // Tracks which player's turn it is
 
     private int boardSize;
     private ScoringType scoringType;
     private double komi;
 
+    /**
+     * Constructs a new GameSession between two players.
+     */
     public GameSession(PlayerConnection p1, PlayerConnection p2) {
         this.player1 = p1;
         this.player2 = p2;
     }
 
+    /**
+     * Main logic of the session. Sets up game rules and begins the turn-based communication loop.
+     */
     @Override
     public void run() {
         try {
+            // Initialize communication streams
             out1 = new PrintWriter(player1.socket.getOutputStream(), true);
             in1 = new BufferedReader(new InputStreamReader(player1.socket.getInputStream()));
             out2 = new PrintWriter(player2.socket.getOutputStream(), true);
             in2 = new BufferedReader(new InputStreamReader(player2.socket.getInputStream()));
 
-            // İlk oyuncudan kuralları al
+            // --- STEP 1: Receive game settings from first player ---
             String setupLine;
             while (true) {
                 setupLine = in1.readLine();
@@ -58,23 +61,26 @@ public class GameSession implements Runnable {
 
             System.out.println("📦 Kurallar alındı: " + setupLine);
 
+            // Parse setup info
             String[] parts = setupLine.split(" ");
             boardSize = Integer.parseInt(parts[1]);
             scoringType = ScoringType.valueOf(parts[2]);
             komi = Double.parseDouble(parts[3]);
 
-            // İkinci oyuncuya aynı kuralları gönder
+            // --- STEP 2: Forward setup to second player ---
             out2.println(setupLine);
 
-            // Oyunculara renkleri gönder
+            // --- STEP 3: Assign colors ---
             out1.println("BLACK");
             out2.println("WHITE");
 
             System.out.println("🎮 Yeni Oyun Başladı: " + player1.name + " (BLACK) vs " + player2.name + " (WHITE)");
 
+            // Create a new board and controller
             Board board = new Board(boardSize);
             gameController = new GameController(board, null, scoringType, komi);
 
+            // Start listener threads for each player
             ExecutorService pool = Executors.newFixedThreadPool(2);
             pool.execute(() -> handlePlayer(in1, out1, out2, Stone.BLACK, player1.name));
             pool.execute(() -> handlePlayer(in2, out2, out1, Stone.WHITE, player2.name));
@@ -84,6 +90,15 @@ public class GameSession implements Runnable {
         }
     }
 
+    /**
+     * Handles communication from one player during the game.
+     *
+     * @param in          BufferedReader from the player
+     * @param out         PrintWriter to the player
+     * @param opponentOut PrintWriter to the opponent
+     * @param playerColor The color of the current player
+     * @param playerName  The name of the current player
+     */
     private void handlePlayer(BufferedReader in, PrintWriter out, PrintWriter opponentOut, Stone playerColor, String playerName) {
         try {
             String line;
@@ -91,18 +106,20 @@ public class GameSession implements Runnable {
                 System.out.println("📩 [" + playerName + "][" + playerColor + "] komut: " + line);
 
                 if (line.startsWith("MOVE ")) {
+                    // Parse move coordinates
                     String[] parts = line.split(" ");
                     int x = Integer.parseInt(parts[1]);
                     int y = Integer.parseInt(parts[2]);
 
                     boolean correctTurn = (playerColor == Stone.BLACK && isPlayer1Turn)
-                            || (playerColor == Stone.WHITE && !isPlayer1Turn);
+                                        || (playerColor == Stone.WHITE && !isPlayer1Turn);
 
                     if (!correctTurn) {
                         out.println("MESAJ Sıra sende değil!");
                         continue;
                     }
 
+                    // Process move
                     boolean success = gameController.handleMove(x, y);
                     if (success) {
                         out1.println("MOVE " + x + " " + y);
@@ -113,6 +130,7 @@ public class GameSession implements Runnable {
                     }
 
                 } else if (line.equals("PASS")) {
+                    // Both players notified of pass
                     gameController.handlePass();
                     out1.println("PASS");
                     out2.println("PASS");
@@ -126,7 +144,14 @@ public class GameSession implements Runnable {
                     if (undone != null) {
                         out1.println("UNDO " + undone.x + " " + undone.y);
                         out2.println("UNDO " + undone.x + " " + undone.y);
-                        isPlayer1Turn = !isPlayer1Turn;
+                        isPlayer1Turn = (undone.color == Stone.BLACK);
+
+                        // Notify new turn
+                        String newTurn = (undone.color == Stone.BLACK) ? "B" : "W";
+                        out1.println("TURN " + newTurn);
+                        out2.println("TURN " + newTurn);
+                    } else {
+                        out.println("MESAJ Sadece kendi hamleni geri alabilirsin!");
                     }
 
                 } else if (line.equals("REJECT_UNDO")) {

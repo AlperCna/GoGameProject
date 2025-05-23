@@ -13,6 +13,14 @@ import static model.ScoringType.CHINESE;
 import static model.ScoringType.JAPANESE;
 import static model.ScoringType.STONE;
 
+/*
+ * GameController.java
+ *
+ * This class manages the core logic of the Go game.
+ * It processes moves, captures, undo, pass, and scoring logic.
+ * It also interacts with the GUI (GameFrame) to reflect current game state.
+ */
+
 public class GameController {
 
     private Board board;
@@ -27,12 +35,18 @@ public class GameController {
 
     private Stack<Move> moveHistory;
     private ScoringType scoringType;
-
     private DefaultListModel<String> moveListModel = new DefaultListModel<>();
     private int moveCount = 0;
-
     private double komi;
 
+    /**
+     * Initializes the game controller with board and scoring settings.
+     *
+     * @param board        The board object representing the game grid.
+     * @param gameFrame    Reference to the GUI window (can be null for server-side use).
+     * @param scoringType  The type of scoring system (Japanese, Chinese, Stone).
+     * @param komi         Bonus points for the white player.
+     */
     public GameController(Board board, GameFrame gameFrame, ScoringType scoringType, double komi) {
         this.board = board;
         this.rulesChecker = new RulesChecker(board);
@@ -54,6 +68,13 @@ public class GameController {
         return whiteCaptures;
     }
 
+    /**
+     * Handles placing a stone for the current player, updating captures and turn.
+     *
+     * @param x x-coordinate on the board.
+     * @param y y-coordinate on the board.
+     * @return true if the move is valid and applied, false otherwise.
+     */
     public boolean handleMove(int x, int y) {
         if (!board.isValidCoordinate(x, y) || !board.isCellEmpty(x, y)) return false;
         if (rulesChecker.isSuicideMove(x, y, currentPlayer)) return false;
@@ -76,6 +97,9 @@ public class GameController {
         return true;
     }
 
+    /**
+     * Handles a pass action. If both players pass consecutively, ends the game.
+     */
     public void handlePass() {
         if (lastMoveWasPass) {
             String winner = (getTotalScore(Stone.BLACK) > getTotalScore(Stone.WHITE)) ? "Siyah" : "Beyaz";
@@ -88,35 +112,48 @@ public class GameController {
         if (gameFrame != null) gameFrame.updateStats();
     }
 
-  private void switchTurn() {
-    currentPlayer = (currentPlayer == Stone.BLACK) ? Stone.WHITE : Stone.BLACK;
-    if (gameFrame != null) gameFrame.updateTurnLabel();
-}
-
-
-   public Move undoLastMove() {
-    if (!moveHistory.isEmpty()) {
-        Move last = moveHistory.pop();
-        board.removeStone(last.x, last.y);
-        if (!moveListModel.isEmpty()) {
-            moveListModel.removeElementAt(moveListModel.size() - 1);
-            moveCount--;
-        }
-
-        // 🔁 Oyuncu sırasını geri al
-        currentPlayer = last.color;
-
-        if (gameFrame != null) {
-            gameFrame.updateStats();
-            gameFrame.updateTurnLabel();
-        }
-        return last;
+    /**
+     * Switches the current player to the other color.
+     */
+    private void switchTurn() {
+        currentPlayer = (currentPlayer == Stone.BLACK) ? Stone.WHITE : Stone.BLACK;
+        if (gameFrame != null) gameFrame.updateTurnLabel();
     }
-    return null;
-}
 
+    /**
+     * Undoes the last move if it belongs to the correct player.
+     *
+     * @return the undone move, or null if not allowed.
+     */
+    public Move undoLastMove() {
+        if (!moveHistory.isEmpty()) {
+            Move last = moveHistory.peek();
+            Stone expectedColor = (currentPlayer == Stone.BLACK) ? Stone.WHITE : Stone.BLACK;
+            if (last.color != expectedColor) return null;
 
+            moveHistory.pop();
+            board.removeStone(last.x, last.y);
 
+            if (!moveListModel.isEmpty()) {
+                moveListModel.removeElementAt(moveListModel.size() - 1);
+                moveCount--;
+            }
+
+            currentPlayer = last.color;
+
+            if (gameFrame != null) {
+                gameFrame.updateStats();
+                gameFrame.updateTurnLabel();
+            }
+
+            return last;
+        }
+        return null;
+    }
+
+    /**
+     * Resets the board and internal state to begin a new game.
+     */
     public void resetGame() {
         board.clearBoard();
         currentPlayer = Stone.BLACK;
@@ -129,6 +166,12 @@ public class GameController {
         if (gameFrame != null) gameFrame.updateStats();
     }
 
+    /**
+     * Calculates territory controlled by the player using DFS.
+     *
+     * @param player Stone color to evaluate.
+     * @return total number of empty spaces surrounded by the player's stones.
+     */
     public int calculateTerritory(Stone player) {
         boolean[][] visited = new boolean[board.getSize()][board.getSize()];
         int territory = 0;
@@ -150,6 +193,9 @@ public class GameController {
         return territory;
     }
 
+    /**
+     * Helper method to perform DFS to evaluate territory surrounded by a player's stones.
+     */
     private void dfsTerritoryCheck(int x, int y, boolean[][] visited, List<int[]> area, Set<Stone> borders) {
         if (!board.isValidCoordinate(x, y) || visited[x][y]) return;
         visited[x][y] = true;
@@ -166,6 +212,9 @@ public class GameController {
         }
     }
 
+    /**
+     * Counts the number of stones placed on the board for the given player.
+     */
     public int countStones(Stone player) {
         int count = 0;
         for (int x = 0; x < board.getSize(); x++) {
@@ -176,6 +225,12 @@ public class GameController {
         return count;
     }
 
+    /**
+     * Calculates total score of the player based on the selected scoring type.
+     *
+     * @param player Stone color to calculate score for.
+     * @return integer score.
+     */
     public int getTotalScore(Stone player) {
         int base = switch (scoringType) {
             case JAPANESE -> calculateTerritory(player) + (player == Stone.BLACK ? blackCaptures : whiteCaptures);
@@ -186,6 +241,8 @@ public class GameController {
         if (player == Stone.WHITE) base += komi;
         return (int) base;
     }
+
+    // --- Accessors for other components ---
 
     public ScoringType getScoringType() {
         return scoringType;
@@ -202,29 +259,43 @@ public class GameController {
     public double getKomi() {
         return komi;
     }
+
     public GameFrame getGameFrame() {
-    return gameFrame;
-}
+        return gameFrame;
+    }
+
+    /**
+     * Triggers a stats update in the GameFrame UI.
+     */
     public void updateStats() {
-    if (gameFrame != null) {
-        gameFrame.updateStats();
+        if (gameFrame != null) {
+            gameFrame.updateStats();
+        }
     }
-}
+
+    /**
+     * Clears the history of moves, used for full resets.
+     */
     public void clearMoveHistory() {
-    moveHistory.clear();
-    moveCount = 0;
-}
-
-public void addMoveToHistory(int x, int y, Stone s) {
-    Move m = new Move(x, y, s);
-    if (!moveHistory.contains(m)) {
-        moveHistory.push(m);
-        moveCount++;
+        moveHistory.clear();
+        moveCount = 0;
     }
-}
-public void setCurrentPlayer(Stone player) {
-    this.currentPlayer = player;
-}
 
-    
+    /**
+     * Adds a move to the move history and updates move count.
+     */
+    public void addMoveToHistory(int x, int y, Stone s) {
+        Move m = new Move(x, y, s);
+        if (!moveHistory.contains(m)) {
+            moveHistory.push(m);
+            moveCount++;
+        }
+    }
+
+    /**
+     * Manually sets the current player's turn.
+     */
+    public void setCurrentPlayer(Stone player) {
+        this.currentPlayer = player;
+    }
 }

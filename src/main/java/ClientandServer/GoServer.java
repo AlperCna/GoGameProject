@@ -17,36 +17,53 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class GoServer {
 
+    // The port number on which the server listens for incoming connections
     private static final int PORT = 12345;
-    private static final ExecutorService pool = Executors.newCachedThreadPool();
-    private static final BlockingQueue<PlayerConnection> waitingPlayers = new LinkedBlockingQueue<>();
-    private static final AtomicInteger playerCounter = new AtomicInteger(1); // fallback isim numarası
 
+    // Thread pool to handle multiple games concurrently
+    private static final ExecutorService pool = Executors.newCachedThreadPool();
+
+    // Queue to hold players waiting to be paired
+    private static final BlockingQueue<PlayerConnection> waitingPlayers = new LinkedBlockingQueue<>();
+
+    // Counter to generate fallback player names
+    private static final AtomicInteger playerCounter = new AtomicInteger(1);
+
+    /**
+     * Entry point of the Go game server.
+     * Listens for incoming player connections and starts a new game session when two players are available.
+     */
     public static void main(String[] args) {
         System.out.println("Go sunucusu başlatıldı. Oyuncular bekleniyor...");
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             while (true) {
+                // Accept a new player connection
                 Socket playerSocket = serverSocket.accept();
 
-                // Önce isim dinlenir
+                // Temporary input stream to receive player name
                 BufferedReader tempIn = new BufferedReader(new InputStreamReader(playerSocket.getInputStream()));
-                String nameLine = tempIn.readLine(); // örn: NAME Alper
+                String nameLine = tempIn.readLine(); // Expected format: "NAME Alper"
 
-                String name = "Player" + playerCounter.getAndIncrement(); // fallback
+                // Set default name if none provided
+                String name = "Player" + playerCounter.getAndIncrement();
                 if (nameLine != null && nameLine.startsWith("NAME ")) {
                     name = nameLine.substring(5).trim();
                 }
 
+                // Create a new player connection object
                 PlayerConnection player = new PlayerConnection(playerSocket, name);
                 System.out.println("🔗 Yeni oyuncu bağlandı: " + player.name);
 
+                // Add the player to the waiting queue
                 waitingPlayers.put(player);
 
+                // When two players are available, start a new game session
                 if (waitingPlayers.size() >= 2) {
                     PlayerConnection p1 = waitingPlayers.take();
                     PlayerConnection p2 = waitingPlayers.take();
 
+                    // Run the game session on a separate thread
                     pool.execute(new GameSession(p1, p2));
                 }
             }
@@ -55,6 +72,9 @@ public class GoServer {
         }
     }
 
+    /**
+     * A helper class to store player socket and name information.
+     */
     public static class PlayerConnection {
         public Socket socket;
         public String name;
